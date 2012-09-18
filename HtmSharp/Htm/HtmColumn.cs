@@ -16,6 +16,18 @@ namespace Htm
 
         #region Properties
 
+        public int X
+        {
+            get;
+            set;
+        }
+
+        public int Y
+        {
+            get;
+            set;
+        }
+
         public IEnumerable<HtmColumn> Neighbors
         {
             get;
