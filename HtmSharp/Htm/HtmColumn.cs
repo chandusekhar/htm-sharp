@@ -7,10 +7,15 @@ namespace Htm
 {
     public class HtmColumn
     {
-
+        #region Fields
+        
         private List<bool> _afterInhibationActivationHistory;
         private List<bool> _beforeInhibationActivationHistory;
-                
+
+        #endregion
+
+        #region Properties
+
         public IEnumerable<HtmColumn> Neighbors
         {
             get;
@@ -23,7 +28,7 @@ namespace Htm
             set;
         }
 
-        public double Boost 
+        public double Boost
         { 
             get; 
             set; 
@@ -52,13 +57,16 @@ namespace Htm
             get; 
             set; 
         }
-                
+
+        #endregion
+
+        #region Methods
+
         public IEnumerable<HtmSynapse> GetConnectedSynapses()
         {
             //TODO change 0.2 with a parameter
             return PotentialSynapses.Where(synapse => synapse.Permanance > 0.2).ToList();
         }
-
         
         public void AddActivationToHistory(bool state)
         {
@@ -106,7 +114,8 @@ namespace Htm
                 }
             }           
         }
-        
+
+        #endregion
 
         #region Instance
 
