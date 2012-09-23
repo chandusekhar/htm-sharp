@@ -43,10 +43,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
+    <Compile Include="HtmDendriteSegment.cs" />
     <Compile Include="HtmNetwork.cs" />
     <Compile Include="HtmSpatialPooler.cs" />
     <Compile Include="HtmSynapse.cs" />
+    <Compile Include="HtmTemporalPooler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
