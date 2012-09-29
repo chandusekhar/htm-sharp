@@ -18,7 +18,7 @@ namespace Htm
             {
                 bool buPredicted = false;
 
-                column.
+                //column.
             }
         }
     }

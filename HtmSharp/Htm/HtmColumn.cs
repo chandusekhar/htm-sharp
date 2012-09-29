@@ -12,6 +12,9 @@ namespace Htm
         private List<bool> _afterInhibationActivationHistory;
         private List<bool> _beforeInhibationActivationHistory;
 
+        private double _connectedPermanence;
+        private int _historySize;
+
         #endregion
 
         #region Properties
@@ -76,25 +79,24 @@ namespace Htm
 
         public IEnumerable<HtmSynapse> GetConnectedSynapses()
         {
-            //TODO change 0.2 with a parameter
-            return PotentialSynapses.Where(synapse => synapse.Permanance > 0.2).ToList();
+            return PotentialSynapses.Where(synapse => synapse.Permanance > _connectedPermanence).ToList();
         }
         
         public void AddActivationToHistory(bool state)
         {
             _afterInhibationActivationHistory.Insert(0, state);
-            if (_afterInhibationActivationHistory.Count > 1000)
+            if (_afterInhibationActivationHistory.Count > _historySize)
             {
-                _afterInhibationActivationHistory.RemoveAt(1000);
+                _afterInhibationActivationHistory.RemoveAt(_historySize);
             }
         }
 
         public void AddOverlapToHistory(bool state)
         {
             _beforeInhibationActivationHistory.Insert(0, state);
-            if (_beforeInhibationActivationHistory.Count > 1000)
+            if (_beforeInhibationActivationHistory.Count > _historySize)
             {
-                _beforeInhibationActivationHistory.RemoveAt(1000);
+                _beforeInhibationActivationHistory.RemoveAt(_historySize);
             }
         }
 
@@ -131,12 +133,15 @@ namespace Htm
 
         #region Instance
 
-        public HtmColumn()
+        public HtmColumn(double connectedPermanence = 0.2, int historySize = 1000)
         {
             _afterInhibationActivationHistory = new List<bool>();
             _beforeInhibationActivationHistory = new List<bool>();
 
-            PotentialSynapses = new List<HtmSynapse>();            
+            PotentialSynapses = new List<HtmSynapse>();
+
+            _connectedPermanence = connectedPermanence;
+            _historySize = historySize;
         }
 
         #endregion

@@ -20,9 +20,10 @@ namespace Htm
         private int _minOverlap;
         private int _desiredLocalActivity;
         private double _permananceInc;
-        private double _connectedPermanance;
         private double _inhibitionRadius;
         private double _inhibitionRadiusBefore;
+
+        private double _connectedPermanence;
 
         #endregion
 
@@ -133,48 +134,47 @@ namespace Htm
             foreach (var column in _columnList)
             {
                 column.UpdateColumnBoost();
-                column.UpdateSynapsePermanance(_connectedPermanance);
+                column.UpdateSynapsePermanance(_connectedPermanence);
             }
 
             _inhibitionRadiusBefore = _inhibitionRadius;
             _inhibitionRadius = AverageReceptiveFieldSize();
-
         }
 
         private double AverageReceptiveFieldSize()
         {
-            //TODO implement this
-            return _inhibitionRadius;
+            var receptiveFieldSizeSum = 0.0;
+            var count = 0;
+            foreach (var column in _columnList)
+            {
+                foreach (var synapse in column.GetConnectedSynapses())
+                {
+                    receptiveFieldSizeSum += Math.Sqrt(Math.Pow(Math.Abs(column.X - synapse.X), 2) + Math.Pow(Math.Abs(column.Y - synapse.Y), 2));
+                    count++;
+                }
+            }
+            return (receptiveFieldSizeSum / count);
+        }
+
+        public void Init(int synapsesCount, int columnsCount, float overlapPercent)
+        {
+
         }
 
         #endregion
 
         #region Instance
 
-        public HtmSpatialPooler(IEnumerable<HtmColumn> columns,
-                                int rowCount,
+        public HtmSpatialPooler(int rowCount,
                                 int columnCount,
                                 int minOverlap = 2,
                                 int desiredLocalActivity = 1,
                                 double inhibitionRadios = 5.0,
                                 double connectedPermanance = 0.2,
-                                double permananceInc = 0.05)
+                                double permananceInc = 0.05,
+                                double connectedPermanence = 0.2)
         {
-            #region Argument Check
-
-            if (_columnList == null)
-            {
-                throw new ArgumentNullException("columns");
-            }
-
-            if (rowCount * columnCount != columns.Count())
-            {
-                throw new ArgumentException("(rowCount * columnCount != columns.Count()) == true");
-            }
-
-            #endregion
-
-            _columnList = new List<HtmColumn>(columns);
+            _columnList = new List<HtmColumn>();
             _columnMatrix = new HtmColumn[columnCount, rowCount];
 
             _columnMatrixRowCount = rowCount;
@@ -196,7 +196,7 @@ namespace Htm
             _desiredLocalActivity = desiredLocalActivity;
             _permananceInc = permananceInc;
             _inhibitionRadius = inhibitionRadios;
-            _connectedPermanance = connectedPermanance;
+            _connectedPermanence = connectedPermanance;
         }
 
         #endregion
