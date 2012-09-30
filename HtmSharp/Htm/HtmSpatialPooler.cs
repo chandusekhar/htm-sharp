@@ -35,19 +35,16 @@ namespace Htm
         {
             foreach (var column in _columnList)
             {
-                foreach (var synapse in column.GetConnectedSynapses())
-                {
-                    column.Overlap += synapse.SourceInput ? 1 : 0;
-                }
+                var overlap = column.GetConnectedSynapses().Sum(synapse => synapse.SourceInput ? 1 : 0);
 
-                if (column.Overlap < _minOverlap)
+                if (overlap < _minOverlap)
                 {
                     column.Overlap = 0;
                     column.AddOverlapToHistory(false);
                 }
                 else
                 {
-                    column.Overlap *= column.Boost;
+                    column.Overlap = overlap * column.Boost;
                     column.AddOverlapToHistory(true);
                 }
             }
@@ -76,6 +73,8 @@ namespace Htm
                     column.AddActivationToHistory(false);
                 }
             }
+
+            Console.WriteLine("Active columns : {0}",_activeColumns.Count);
         }
 
         private IEnumerable<HtmColumn> CalculateNeighBors(HtmColumn column)
@@ -95,7 +94,7 @@ namespace Htm
                 {
                     if (htmColumn != column)
                     {
-                        ret.Add(column);
+                        ret.Add(htmColumn);
                     }
                 }
 
@@ -170,7 +169,7 @@ namespace Htm
 
             var ran = new Random();
 
-            
+
             for (int i = 0; i < synapsesCount; i++)
             {
 
@@ -180,7 +179,7 @@ namespace Htm
                                          Y = i / synapseSpaceSize,
                                          X = i % synapseSpaceSize,
                                          Permanance = (ran.Next(5)) / (double)10,
-                                         SourceInput = ran.Next(2) == 0
+                                         SourceInput = ran.Next(3) == 0
                                      });
             }
 
@@ -226,7 +225,7 @@ namespace Htm
         public HtmSpatialPooler(int synapsesCount = 144,
                                 int columnsCount = 9,
                                 int amountOfPotentialSynapses = 32,
-                                int minOverlap = 2,
+                                int minOverlap = 3,
                                 int desiredLocalActivity = 1,
                                 double inhibitionRadios = 5.0,
                                 double permananceInc = 0.05,
