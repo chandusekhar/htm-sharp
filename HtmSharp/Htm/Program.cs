@@ -9,6 +9,11 @@ namespace Htm
     {
         static void Main(string[] args)
         {
+            var pooler = new HtmSpatialPooler();
+            pooler.Run();
+            pooler.Run();
+            pooler.Run();
+            pooler.Run();
         }
     }
 }

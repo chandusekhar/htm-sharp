@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Collections;
+using Htm.Common;
 
 namespace Htm
 {
@@ -11,19 +10,15 @@ namespace Htm
         #region Fields
 
         private List<HtmColumn> _columnList;
-        private HtmColumn[,] _columnMatrix;
-        private int _columnMatrixRowCount;
-        private int _columnMatrixColumnCount;
-
         private List<HtmColumn> _activeColumns;
-
-        private int _minOverlap;
-        private int _desiredLocalActivity;
-        private double _permananceInc;
+        private List<HtmSynapse> _synapses;
+        private HtmColumn[,] _columnMatrix;
+        private readonly int _minOverlap;
+        private readonly int _desiredLocalActivity;
+        private readonly double _permananceInc;
         private double _inhibitionRadius;
         private double _inhibitionRadiusBefore;
-
-        private double _connectedPermanence;
+        private readonly double _connectedPermanence;
 
         #endregion
 
@@ -42,7 +37,7 @@ namespace Htm
             {
                 foreach (var synapse in column.GetConnectedSynapses())
                 {
-                    column.Overlap += synapse.SourceInput == true ? 1 : 0;
+                    column.Overlap += synapse.SourceInput ? 1 : 0;
                 }
 
                 if (column.Overlap < _minOverlap)
@@ -86,28 +81,30 @@ namespace Htm
         private IEnumerable<HtmColumn> CalculateNeighBors(HtmColumn column)
         {
             int minX = Math.Max(column.X - (int)_inhibitionRadius, 0);
-            int maxX = Math.Min(column.X + (int)_inhibitionRadius, _columnMatrixColumnCount);
+            int maxX = Math.Min(column.X + (int)_inhibitionRadius, (int)Math.Sqrt(_synapses.Count));
 
             int minY = Math.Max(column.Y - (int)_inhibitionRadius, 0);
-            int maxY = Math.Min(column.Y + (int)_inhibitionRadius, _columnMatrixRowCount);
+            int maxY = Math.Min(column.Y + (int)_inhibitionRadius, (int)Math.Sqrt(_synapses.Count));
 
-            var ret = new List<HtmColumn>((maxX - minX) * (maxY - minY) - 1);
+            var ret = new List<HtmColumn>();
 
-            for (int x = minX; x < maxX; x++)
+
+            foreach (var htmColumn in _columnList)
             {
-                for (int y = minY; y < maxY; y++)
+                if (htmColumn.X >= minX && htmColumn.X < maxX && htmColumn.Y >= minY && htmColumn.Y < maxY)
                 {
-                    if (x != column.X && y != column.Y)
+                    if (htmColumn != column)
                     {
-                        ret.Add(_columnMatrix[x, y]);
+                        ret.Add(column);
                     }
                 }
+
             }
 
             return ret;
         }
 
-        private double KthScore(IEnumerable<HtmColumn> neighbors, int desiredLocalActivity)
+        private static double KthScore(IEnumerable<HtmColumn> neighbors, int desiredLocalActivity)
         {
             return neighbors.OrderByDescending(c => c.Overlap).ElementAt(Math.Min(desiredLocalActivity, neighbors.Count()) - 1).Overlap;
         }
@@ -156,47 +153,94 @@ namespace Htm
             return (receptiveFieldSizeSum / count);
         }
 
-        public void Init(int synapsesCount, int columnsCount, float overlapPercent)
+
+
+
+        public void Init(int synapsesCount = 144,
+                         int columnsCount = 9,
+                         int amountOfPotentialSynapses = 36)
         {
 
+            _columnList = new List<HtmColumn>();
+            _activeColumns = new List<HtmColumn>();
+            _synapses = new List<HtmSynapse>();
+
+            var synapseSpaceSize = (int)Math.Sqrt(synapsesCount);
+            var columnSpaceSize = (int)Math.Sqrt(columnsCount);
+
+            var ran = new Random();
+
+            
+            for (int i = 0; i < synapsesCount; i++)
+            {
+
+                _synapses.Add(new HtmSynapse
+                                     {
+                                         Index = i,
+                                         Y = i / synapseSpaceSize,
+                                         X = i % synapseSpaceSize,
+                                         Permanance = (ran.Next(5)) / (double)10,
+                                         SourceInput = ran.Next(2) == 0
+                                     });
+            }
+
+
+            for (int i = 0; i < columnsCount; i++)
+            {
+                var htmSynapses = _synapses.Shuffle(ran).ToList();
+                var synapses = new List<HtmSynapse>();
+
+                for (int j = 0; j < amountOfPotentialSynapses; j++)
+                {
+                    synapses.Add(htmSynapses[j]);
+                }
+
+                _columnList.Add(new HtmColumn(_connectedPermanence)
+                                    {
+                                        Y = (synapseSpaceSize / (columnSpaceSize + 1)) * (i / columnSpaceSize + 1) - 1,
+                                        X = (synapseSpaceSize / (columnSpaceSize + 1)) * (i % columnSpaceSize + 1) - 1,
+                                        PotentialSynapses = synapses
+                                    });
+            }
+
+
+
+
+            _columnMatrix = new HtmColumn[columnSpaceSize, columnSpaceSize];
+
+            for (int x = 0; x < _columnMatrix.GetLength(0); x++)
+            {
+                for (int y = 0; y < _columnMatrix.GetLength(1); y++)
+                {
+                    _columnMatrix[x, y] = _columnList[x * _columnMatrix.GetLength(0) + y];
+                }
+            }
+
+            _activeColumns = new List<HtmColumn>();
         }
 
         #endregion
 
         #region Instance
 
-        public HtmSpatialPooler(int rowCount,
-                                int columnCount,
+        public HtmSpatialPooler(int synapsesCount = 144,
+                                int columnsCount = 9,
+                                int amountOfPotentialSynapses = 32,
                                 int minOverlap = 2,
                                 int desiredLocalActivity = 1,
                                 double inhibitionRadios = 5.0,
-                                double connectedPermanance = 0.2,
                                 double permananceInc = 0.05,
                                 double connectedPermanence = 0.2)
         {
-            _columnList = new List<HtmColumn>();
-            _columnMatrix = new HtmColumn[columnCount, rowCount];
-
-            _columnMatrixRowCount = rowCount;
-            _columnMatrixColumnCount = columnCount;
-
-            for (int x = 0; x < columnCount; x++)
-            {
-                for (int y = 0; y < rowCount; y++)
-                {
-                    _columnMatrix[x, y] = _columnList[x * columnCount + y];
-                    _columnMatrix[x, y].X = x;
-                    _columnMatrix[x, y].Y = y;
-                }
-            }
-
-            _activeColumns = new List<HtmColumn>();
-
             _minOverlap = minOverlap;
             _desiredLocalActivity = desiredLocalActivity;
             _permananceInc = permananceInc;
             _inhibitionRadius = inhibitionRadios;
-            _connectedPermanence = connectedPermanance;
+            _connectedPermanence = connectedPermanence;
+
+
+            Init(synapsesCount, columnsCount, amountOfPotentialSynapses);
+
         }
 
         #endregion

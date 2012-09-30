@@ -8,7 +8,7 @@ namespace Htm
     public class HtmColumn
     {
         #region Fields
-        
+
         private List<bool> _afterInhibationActivationHistory;
         private List<bool> _beforeInhibationActivationHistory;
 
@@ -44,9 +44,9 @@ namespace Htm
         }
 
         public double Boost
-        { 
-            get; 
-            set; 
+        {
+            get;
+            set;
         }
 
         public double Overlap
@@ -55,22 +55,22 @@ namespace Htm
             set;
         }
 
-        public double MinimalDutyCycle 
-        { 
-            get; 
-            set; 
+        public double MinimalDutyCycle
+        {
+            get;
+            set;
         }
 
-        public double ActiveDutyCycle 
-        { 
-            get; 
-            set; 
+        public double ActiveDutyCycle
+        {
+            get;
+            set;
         }
 
-        public double OverlapDutyCycle 
-        { 
-            get; 
-            set; 
+        public double OverlapDutyCycle
+        {
+            get;
+            set;
         }
 
         #endregion
@@ -81,7 +81,7 @@ namespace Htm
         {
             return PotentialSynapses.Where(synapse => synapse.Permanance > _connectedPermanence).ToList();
         }
-        
+
         public void AddActivationToHistory(bool state)
         {
             _afterInhibationActivationHistory.Insert(0, state);
@@ -105,7 +105,7 @@ namespace Htm
             MinimalDutyCycle = 0.01 * this.Neighbors.Max(n => n.ActiveDutyCycle);
 
             ActiveDutyCycle = (double)_afterInhibationActivationHistory.Count(state => state == true) / _afterInhibationActivationHistory.Count();
-            
+
             if (ActiveDutyCycle > MinimalDutyCycle)
             {
                 Boost = 1.0;
@@ -113,7 +113,7 @@ namespace Htm
             else
             {
                 Boost += MinimalDutyCycle;
-            }           
+            }
         }
 
         public void UpdateSynapsePermanance(double connectedPermanance)
@@ -126,7 +126,7 @@ namespace Htm
                 {
                     synapse.Permanance += connectedPermanance;
                 }
-            }           
+            }
         }
 
         #endregion
@@ -142,8 +142,15 @@ namespace Htm
 
             _connectedPermanence = connectedPermanence;
             _historySize = historySize;
+            Boost = 1;
         }
 
         #endregion
+
+
+        public override string ToString()
+        {
+            return X + "-" + Y + "-" + Overlap;
+        }
     }
 }
