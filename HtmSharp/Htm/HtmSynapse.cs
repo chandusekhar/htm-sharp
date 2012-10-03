@@ -9,17 +9,19 @@ namespace Htm
     {
         public bool SourceInput
         {
-            get;
-            set;
+            get
+            {
+                return Input.Matrix[X, Y];
+            }
         }
+
+        public HtmInput Input { get; set; }
 
         public double Permanance
         {
             get;
             set;
         }
-
-        public int Index { get; set; }
 
         public int X { get; set; }
 

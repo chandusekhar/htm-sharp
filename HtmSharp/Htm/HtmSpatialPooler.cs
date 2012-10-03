@@ -9,16 +9,16 @@ namespace Htm
     {
         #region Fields
 
+        private static readonly Random Ran = new Random();
         private List<HtmColumn> _columnList;
         private List<HtmColumn> _activeColumns;
-        private List<HtmSynapse> _synapses;
-        private HtmColumn[,] _columnMatrix;
         private readonly int _minOverlap;
         private readonly int _desiredLocalActivity;
         private readonly double _permananceInc;
         private double _inhibitionRadius;
         private double _inhibitionRadiusBefore;
         private readonly double _connectedPermanence;
+        private HtmInput _input;
 
         #endregion
 
@@ -74,16 +74,16 @@ namespace Htm
                 }
             }
 
-            Console.WriteLine("Active columns : {0}",_activeColumns.Count);
+            Console.WriteLine("Active columns : {0}", _activeColumns.Count);
         }
 
         private IEnumerable<HtmColumn> CalculateNeighBors(HtmColumn column)
         {
             int minX = Math.Max(column.X - (int)_inhibitionRadius, 0);
-            int maxX = Math.Min(column.X + (int)_inhibitionRadius, (int)Math.Sqrt(_synapses.Count));
+            int maxX = Math.Min(column.X + (int)_inhibitionRadius, _input.Matrix.GetLength(0));
 
             int minY = Math.Max(column.Y - (int)_inhibitionRadius, 0);
-            int maxY = Math.Min(column.Y + (int)_inhibitionRadius, (int)Math.Sqrt(_synapses.Count));
+            int maxY = Math.Min(column.Y + (int)_inhibitionRadius, _input.Matrix.GetLength(1));
 
             var ret = new List<HtmColumn>();
 
@@ -155,65 +155,53 @@ namespace Htm
 
 
 
-        public void Init(int synapsesCount = 144,
+        public void Init(HtmInput input,
                          int columnsCount = 9,
                          int amountOfPotentialSynapses = 36)
         {
 
+            _input = input;
             _columnList = new List<HtmColumn>();
             _activeColumns = new List<HtmColumn>();
-            _synapses = new List<HtmSynapse>();
 
-            var synapseSpaceSize = (int)Math.Sqrt(synapsesCount);
-            var columnSpaceSize = (int)Math.Sqrt(columnsCount);
-
-            var ran = new Random();
+            var inputIndexList = new List<int>();
 
 
-            for (int i = 0; i < synapsesCount; i++)
+            for (int i = 0; i < input.Matrix.GetLength(0) * input.Matrix.GetLength(1); i++)
             {
-
-                _synapses.Add(new HtmSynapse
-                                     {
-                                         Index = i,
-                                         Y = i / synapseSpaceSize,
-                                         X = i % synapseSpaceSize,
-                                         Permanance = (ran.Next(5)) / (double)10,
-                                         SourceInput = ran.Next(3) == 0
-                                     });
+                inputIndexList.Add(i);
             }
 
-
-            for (int i = 0; i < columnsCount; i++)
+            var clusters = KMeansAlgorithm.FindMatrixClusters(input.Matrix.GetLength(0), input.Matrix.GetLength(1), columnsCount);
+            foreach (var cluster in clusters)
             {
-                var htmSynapses = _synapses.Shuffle(ran).ToList();
+
+                var htmSynapses = inputIndexList.Shuffle(Ran).ToList();
                 var synapses = new List<HtmSynapse>();
 
                 for (int j = 0; j < amountOfPotentialSynapses; j++)
                 {
-                    synapses.Add(htmSynapses[j]);
+                    var newSynapse = new HtmSynapse
+                                         {
+                                             Input = input,
+                                             Y = htmSynapses[j] / input.Matrix.GetLength(0),
+                                             X = htmSynapses[j] % input.Matrix.GetLength(0),
+                                             Permanance = (Ran.Next(5)) / (double)10,
+                                         };
+
+                    synapses.Add(newSynapse);
+
+
                 }
 
                 _columnList.Add(new HtmColumn(_connectedPermanence)
                                     {
-                                        Y = (synapseSpaceSize / (columnSpaceSize + 1)) * (i / columnSpaceSize + 1) - 1,
-                                        X = (synapseSpaceSize / (columnSpaceSize + 1)) * (i % columnSpaceSize + 1) - 1,
+                                        Y = (int)Math.Round(cluster.Location.Y),
+                                        X = (int)Math.Round(cluster.Location.X),
                                         PotentialSynapses = synapses
                                     });
             }
 
-
-
-
-            _columnMatrix = new HtmColumn[columnSpaceSize, columnSpaceSize];
-
-            for (int x = 0; x < _columnMatrix.GetLength(0); x++)
-            {
-                for (int y = 0; y < _columnMatrix.GetLength(1); y++)
-                {
-                    _columnMatrix[x, y] = _columnList[x * _columnMatrix.GetLength(0) + y];
-                }
-            }
 
             _activeColumns = new List<HtmColumn>();
         }
@@ -222,7 +210,7 @@ namespace Htm
 
         #region Instance
 
-        public HtmSpatialPooler(int synapsesCount = 144,
+        public HtmSpatialPooler(HtmInput input,
                                 int columnsCount = 9,
                                 int amountOfPotentialSynapses = 32,
                                 int minOverlap = 3,
@@ -238,7 +226,7 @@ namespace Htm
             _connectedPermanence = connectedPermanence;
 
 
-            Init(synapsesCount, columnsCount, amountOfPotentialSynapses);
+            Init(input, columnsCount, amountOfPotentialSynapses);
 
         }
 

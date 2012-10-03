@@ -9,7 +9,10 @@ namespace Htm
     {
         static void Main(string[] args)
         {
-            var pooler = new HtmSpatialPooler();
+            var pooler = new HtmSpatialPooler(new HtmInput { Matrix = new bool[10,5]});
+
+
+
 
             while (true)
             {

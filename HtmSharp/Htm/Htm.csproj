@@ -44,6 +44,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common\EnumerableExtension.cs" />
+    <Compile Include="Common\KMeansAlgorithm.cs" />
+    <Compile Include="Common\KMeansCluster.cs" />
+    <Compile Include="Common\KMeansPoint.cs" />
     <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
     <Compile Include="HtmDendriteSegment.cs" />
@@ -51,6 +54,7 @@
     <Compile Include="HtmSpatialPooler.cs" />
     <Compile Include="HtmSynapse.cs" />
     <Compile Include="HtmTemporalPooler.cs" />
+    <Compile Include="HtmInput.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
