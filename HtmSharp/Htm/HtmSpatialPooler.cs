@@ -26,12 +26,18 @@ namespace Htm
 
         public IEnumerable<HtmColumn> Columns
         {
-            get { return _columnList; }
+            get
+            {
+                return _columnList;
+            }
         }
 
         public IEnumerable<HtmColumn> ActiveColumns
         {
-            get { return _activeColumns; }
+            get
+            {
+                return _activeColumns;
+            }
         }
 
         #endregion
@@ -156,7 +162,7 @@ namespace Htm
         {
             foreach (HtmColumn column in _activeColumns)
             {
-                foreach (HtmSynapse synapse in column.PotentialSynapses)
+                foreach (HtmForwardSynapse synapse in column.PotentialSynapses)
                 {
                     if (synapse.SourceInput)
                     {
@@ -193,7 +199,7 @@ namespace Htm
             int count = 0;
             foreach (HtmColumn column in _columnList)
             {
-                foreach (HtmSynapse synapse in column.GetConnectedSynapses())
+                foreach (HtmForwardSynapse synapse in column.GetConnectedSynapses())
                 {
                     receptiveFieldSizeSum += Math.Sqrt(Math.Pow(Math.Abs(column.X - synapse.X), 2) + Math.Pow(Math.Abs(column.Y - synapse.Y), 2));
                     count++;
@@ -236,11 +242,11 @@ namespace Htm
             foreach (KMeansCluster cluster in clusters)
             {
                 List<int> htmSynapses = inputIndexList.Shuffle(Ran).ToList();
-                var synapses = new List<HtmSynapse>();
+                var synapses = new List<HtmForwardSynapse>();
 
                 for (int j = 0; j < amountOfPotentialSynapses; j++)
                 {
-                    var newSynapse = new HtmSynapse
+                    var newSynapse = new HtmForwardSynapse(_connectedPermanence)
                                      {
                                          Input = input,
                                          Y = htmSynapses[j] / input.Matrix.GetLength(0),
@@ -251,7 +257,7 @@ namespace Htm
                     synapses.Add(newSynapse);
                 }
 
-                _columnList.Add(new HtmColumn(_connectedPermanence)
+                _columnList.Add(new HtmColumn
                                 {
                                     Y = (int)Math.Round(cluster.Location.Y),
                                     X = (int)Math.Round(cluster.Location.X),

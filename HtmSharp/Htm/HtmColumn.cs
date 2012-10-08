@@ -10,8 +10,6 @@ namespace Htm
 
         private readonly List<bool> _afterInhibationActivationHistory;
         private readonly List<bool> _beforeInhibationActivationHistory;
-
-        private readonly double _connectedPermanence;
         private readonly int _historySize;
 
         #endregion
@@ -42,7 +40,7 @@ namespace Htm
             set;
         }
 
-        public IEnumerable<HtmSynapse> PotentialSynapses
+        public IEnumerable<HtmForwardSynapse> PotentialSynapses
         {
             get;
             set;
@@ -82,9 +80,9 @@ namespace Htm
 
         #region Methods
 
-        public IEnumerable<HtmSynapse> GetConnectedSynapses()
+        public IEnumerable<HtmForwardSynapse> GetConnectedSynapses()
         {
-            return PotentialSynapses.Where(synapse => synapse.Permanance > _connectedPermanence).ToList();
+            return PotentialSynapses.Where(synapse => synapse.IsConnected() ).ToList();
         }
 
         public void AddActivationToHistory(bool state)
@@ -138,16 +136,14 @@ namespace Htm
 
         #region Instance
 
-        public HtmColumn(double connectedPermanence = 0.2, int historySize = 1000)
+        public HtmColumn(int historySize = 1000)
         {
             _afterInhibationActivationHistory = new List<bool>();
             _beforeInhibationActivationHistory = new List<bool>();
             
-            
             Cells = new BindingList<HtmCell>();
-            PotentialSynapses = new List<HtmSynapse>();
-
-            _connectedPermanence = connectedPermanence;
+            PotentialSynapses = new List<HtmForwardSynapse>();
+            
             _historySize = historySize;
             Boost = 1;
         }

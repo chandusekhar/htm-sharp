@@ -2,19 +2,19 @@
 
 namespace Htm
 {
-    public class HtmDendriteSegment
+    public class HtmSegment
     {
         #region Properties
-        
+
         public bool IsSequenceSegment
         {
             get; 
             set;
         }
 
-        public IEnumerable<HtmSynapse> Synapses
+        public IEnumerable<HtmLateralSynapse> Synapses
         {
-            get;
+            get; 
             private set;
         }
 
@@ -22,7 +22,7 @@ namespace Htm
 
         #region Instance
 
-        public HtmDendriteSegment(IEnumerable<HtmSynapse> synapses)
+        public HtmSegment(IEnumerable<HtmLateralSynapse> synapses)
         {
             Synapses = synapses;
         }

@@ -49,10 +49,11 @@
     <Compile Include="Common\KMeansPoint.cs" />
     <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
-    <Compile Include="HtmDendriteSegment.cs" />
+    <Compile Include="HtmLateralSynapse.cs" />
+    <Compile Include="HtmSegment.cs" />
     <Compile Include="HtmRegion.cs" />
     <Compile Include="HtmSpatialPooler.cs" />
-    <Compile Include="HtmSynapse.cs" />
+    <Compile Include="HtmForwardSynapse.cs" />
     <Compile Include="HtmTemporalPooler.cs" />
     <Compile Include="HtmInput.cs" />
     <Compile Include="Program.cs" />

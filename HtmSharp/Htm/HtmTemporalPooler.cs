@@ -1,10 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Htm
 {
     public class HtmTemporalPooler
     {
+        #region Fields
+
+        private readonly int _activationTreshold;
+
+        #endregion
+
+
         #region Methods
 
         /**
@@ -28,14 +36,14 @@ namespace Htm
 
                 foreach (HtmCell cell in column.Cells)
                 {
-                    if (cell.Old.PredictiveState)
+                    if (cell.GetStateByTime(HtmTime.Before).PredictiveState)
                     {
-                        HtmDendriteSegment segment = /*TODO -> cell.*/GetActiveSegment();
+                        HtmSegment segment = /*TODO -> cell.*/GetActiveSegment(cell.GetStateByTime(HtmTime.Before));
 
                         if (segment != null && segment.IsSequenceSegment)
                         {
                             buPredicted = true;
-                            cell.New.ActiveState = true;
+                            cell.GetStateByTime(HtmTime.Now).ActiveState = true;
                         }
                     }
                 }
@@ -44,14 +52,16 @@ namespace Htm
                 {
                     foreach (HtmCell cell in column.Cells)
                     {
-                        cell.New.ActiveState = true;
+                        cell.GetStateByTime(HtmTime.Now).ActiveState = true;
                     }
                 }
             }
         }
 
-        public HtmDendriteSegment GetActiveSegment()
+        public HtmSegment GetActiveSegment(HtmCellState cell)
         {
+            HtmSegment result = null;
+
             //TODO Implement
             throw new NotImplementedException();
         }
@@ -73,21 +83,39 @@ namespace Htm
             {
                 foreach (HtmCell cell in column.Cells)
                 {
-                    foreach (HtmDendriteSegment segment in cell.DendriteSegments)
+                    foreach (HtmSegment segment in cell.GetStateByTime(HtmTime.Now).DendriteSegments)
                     {
-                        if (/*TODO -> cell.*/IsSegmentActive(segment))
+                        if (/*TODO -> segment.*/IsSegmentActive(segment, HtmTime.Now))
                         {
-                            cell.New.PredictiveState = true;
+                            cell.GetStateByTime(HtmTime.Now).PredictiveState = true;
                         }
                     }
                 }
             }
         }
 
-        private bool IsSegmentActive(HtmDendriteSegment segment)
+
+        
+        /// <summary>
+        /// segmentActive(s, t, state) This routine returns true if the number of
+        /// connected synapses on segment s that are active due to the given state at
+        /// time t is greater than activationThreshold. The parameter state can be
+        /// activeState, or learnState.     
+        /// </summary>
+        private bool IsSegmentActive(HtmSegment segment, HtmTime time)
         {
-            //TODO Implement
-            throw new NotImplementedException();
+            var ammountConnected = segment.Synapses.Count(synapse => synapse.IsConnected() && synapse.InputCell.GetStateByTime(time).ActiveState);
+            return ammountConnected > _activationTreshold;
+        }
+
+        #endregion
+
+
+        #region Instance
+
+        public HtmTemporalPooler(int activationTreshold = 1)
+        {
+            _activationTreshold = activationTreshold;
         }
 
         #endregion
