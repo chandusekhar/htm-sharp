@@ -87,6 +87,25 @@ namespace Htm.Common
                     cluster.Location.X = newX;
                     cluster.Location.Y = newY;
                 }
+
+
+                //Fixing zero clusters
+                if (running == false)
+                {
+                    foreach (var cluster in clusters)
+                    {
+                        if (cluster.AssignedInputs.Count == 0)
+                        {
+                            var location = new KMeansPoint(Ran.Next(matX), Ran.Next(matY));
+                            while (clusters.Any(item => location.Equals(item)))
+                            {
+                                location = new KMeansPoint(Ran.Next(matX), Ran.Next(matY));
+                            }
+                            cluster.Location = location;
+                        }
+
+                    }
+                }
             }
 
 

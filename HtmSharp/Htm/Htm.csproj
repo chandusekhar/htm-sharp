@@ -50,7 +50,7 @@
     <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
     <Compile Include="HtmDendriteSegment.cs" />
-    <Compile Include="HtmNetwork.cs" />
+    <Compile Include="HtmRegion.cs" />
     <Compile Include="HtmSpatialPooler.cs" />
     <Compile Include="HtmSynapse.cs" />
     <Compile Include="HtmTemporalPooler.cs" />

@@ -10,15 +10,29 @@ namespace Htm
         #region Fields
 
         private static readonly Random Ran = new Random();
-        private List<HtmColumn> _columnList;
-        private List<HtmColumn> _activeColumns;
-        private readonly int _minOverlap;
+        private readonly double _connectedPermanence;
         private readonly int _desiredLocalActivity;
+        private readonly int _minOverlap;
         private readonly double _permananceInc;
+        private List<HtmColumn> _activeColumns;
+        private List<HtmColumn> _columnList;
         private double _inhibitionRadius;
         private double _inhibitionRadiusBefore;
-        private readonly double _connectedPermanence;
         private HtmInput _input;
+
+        #endregion
+
+        #region Properties
+
+        public IEnumerable<HtmColumn> Columns
+        {
+            get { return _columnList; }
+        }
+
+        public IEnumerable<HtmColumn> ActiveColumns
+        {
+            get { return _activeColumns; }
+        }
 
         #endregion
 
@@ -31,11 +45,16 @@ namespace Htm
             Learn();
         }
 
+        /// <summary>
+        /// Phase 1: Overlap Given an input vector, the first phase calculates the overlap of each column with that vector.
+        /// The overlap for each column is simply the number of connected synapses with active inputs, multiplied by its
+        /// boost. If this value is below minOverlap, we set the overlap score to zero.
+        /// </summary>
         private void Overlap()
         {
-            foreach (var column in _columnList)
+            foreach (HtmColumn column in _columnList)
             {
-                var overlap = column.GetConnectedSynapses().Sum(synapse => synapse.SourceInput ? 1 : 0);
+                int overlap = column.GetConnectedSynapses().Sum(synapse => synapse.SourceInput ? 1 : 0);
 
                 if (overlap < _minOverlap)
                 {
@@ -50,18 +69,25 @@ namespace Htm
             }
         }
 
+
+        /// <summary>
+        /// Phase 2: Inhibition The second phase calculates which columns remain as winners after the inhibition step.
+        /// desiredLocalActivity is a parameter that controls the number of columns that end up winning. For example, if
+        /// desiredLocalActivity is 10, a column will be a winner if its overlap score is greater than the score of the 10'th
+        /// highest column within its inhibition radius.
+        /// </summary>
         private void Inhibition()
         {
             _activeColumns.Clear();
 
-            foreach (var column in _columnList)
+            foreach (HtmColumn column in _columnList)
             {
-                if (Math.Round(_inhibitionRadius) != Math.Round(_inhibitionRadiusBefore) || column.Neighbors == null)
+                if ((int)Math.Round(_inhibitionRadius) != (int)Math.Round(_inhibitionRadiusBefore) || column.Neighbors == null)
                 {
                     column.Neighbors = CalculateNeighBors(column);
                 }
 
-                var minLocalActivity = KthScore(column.Neighbors, _desiredLocalActivity);
+                double minLocalActivity = KthScore(column.Neighbors, _desiredLocalActivity);
 
                 if (column.Overlap > 0 && column.Overlap >= minLocalActivity)
                 {
@@ -77,6 +103,11 @@ namespace Htm
             Console.WriteLine("Active columns : {0}", _activeColumns.Count);
         }
 
+        /// <summary>
+        /// A list of all the columns that are within inhibitionRadius of column c
+        /// </summary>
+        /// <param name="column"></param>
+        /// <returns></returns>
         private IEnumerable<HtmColumn> CalculateNeighBors(HtmColumn column)
         {
             int minX = Math.Max(column.X - (int)_inhibitionRadius, 0);
@@ -85,34 +116,47 @@ namespace Htm
             int minY = Math.Max(column.Y - (int)_inhibitionRadius, 0);
             int maxY = Math.Min(column.Y + (int)_inhibitionRadius, _input.Matrix.GetLength(1));
 
-            var ret = new List<HtmColumn>();
-
-
-            foreach (var htmColumn in _columnList)
-            {
-                if (htmColumn.X >= minX && htmColumn.X < maxX && htmColumn.Y >= minY && htmColumn.Y < maxY)
-                {
-                    if (htmColumn != column)
-                    {
-                        ret.Add(htmColumn);
-                    }
-                }
-
-            }
-
-            return ret;
+            return _columnList.Where(htmColumn => htmColumn != column &&
+                                                  htmColumn.X >= minX &&
+                                                  htmColumn.X < maxX &&
+                                                  htmColumn.Y >= minY &&
+                                                  htmColumn.Y < maxY).ToList();
         }
 
+
+        /// <summary>
+        /// kthScore(cols, k) Given the list of columns, return the k'th highest overlap value.
+        /// </summary>
+        /// <param name="neighbors"></param>
+        /// <param name="desiredLocalActivity"></param>
+        /// <returns></returns>
         private static double KthScore(IEnumerable<HtmColumn> neighbors, int desiredLocalActivity)
         {
-            return neighbors.OrderByDescending(c => c.Overlap).ElementAt(Math.Min(desiredLocalActivity, neighbors.Count()) - 1).Overlap;
+            IOrderedEnumerable<HtmColumn> sorted = neighbors.OrderByDescending(c => c.Overlap);
+            int index = Math.Min(desiredLocalActivity, sorted.Count()) - 1;
+            if (index >= 0)
+            {
+                return sorted.ElementAt(index).Overlap;
+            }
+            return 0;
         }
 
+        /// <summary>
+        /// Phase 3: Learning The third phase performs learning; it updates the permanence values of all synapses as
+        /// necessary, as well as the boost and inhibition radius. The main learning rule is implemented in lines 20-26. For
+        /// winning columns, if a synapse is active, its permanence value is incremented, otherwise it is decremented.
+        /// Permanence values are constrained to be between 0 and 1. Lines 28-36 implement boosting. There are two separate
+        /// boosting mechanisms in place to help a column learn connections. If a column does not win often enough (as
+        /// measured by activeDutyCycle), its overall boost value is increased (line 30-32). Alternatively, if a column's
+        /// connected synapses do not overlap well with any inputs often enough (as measured by overlapDutyCycle), its
+        /// permanence values are boosted (line 34-36). Note: once learning is turned off, boost(c) is frozen. Finally, at
+        /// the end of Phase 3 the inhibition radius is recomputed (line 38).
+        /// </summary>
         private void Learn()
         {
-            foreach (var column in _activeColumns)
+            foreach (HtmColumn column in _activeColumns)
             {
-                foreach (var synapse in column.PotentialSynapses)
+                foreach (HtmSynapse synapse in column.PotentialSynapses)
                 {
                     if (synapse.SourceInput)
                     {
@@ -127,7 +171,7 @@ namespace Htm
                 }
             }
 
-            foreach (var column in _columnList)
+            foreach (HtmColumn column in _columnList)
             {
                 column.UpdateColumnBoost();
                 column.UpdateSynapsePermanance(_connectedPermanence);
@@ -137,13 +181,19 @@ namespace Htm
             _inhibitionRadius = AverageReceptiveFieldSize();
         }
 
+        /// <summary>
+        /// averageReceptiveFieldSize() The radius of the average connected receptive field size of all the columns. The
+        /// connected receptive field size of a column includes only the connected synapses (those with permanence values >=
+        /// connectedPerm). This is used to determine the extent of lateral inhibition between columns.
+        /// </summary>
+        /// <returns></returns>
         private double AverageReceptiveFieldSize()
         {
-            var receptiveFieldSizeSum = 0.0;
-            var count = 0;
-            foreach (var column in _columnList)
+            double receptiveFieldSizeSum = 0.0;
+            int count = 0;
+            foreach (HtmColumn column in _columnList)
             {
-                foreach (var synapse in column.GetConnectedSynapses())
+                foreach (HtmSynapse synapse in column.GetConnectedSynapses())
                 {
                     receptiveFieldSizeSum += Math.Sqrt(Math.Pow(Math.Abs(column.X - synapse.X), 2) + Math.Pow(Math.Abs(column.Y - synapse.Y), 2));
                     count++;
@@ -153,13 +203,23 @@ namespace Htm
         }
 
 
-
-
+        /// <summary>
+        /// Initialization Prior to receiving any inputs, the region is initialized by computing a list of initial potential
+        /// synapses for each column. This consists of a random set of inputs selected from the input space. Each input is
+        /// represented by a synapse and assigned a random permanence value. The random permanence values are chosen with two
+        /// criteria. First, the values are chosen to be in a small range around connectedPerm (the minimum permanence value
+        /// at which a synapse is considered "connected"). This enables potential synapses to become connected (or
+        /// disconnected) after a small number of training iterations. Second, each column has a natural center over the
+        /// input region, and the permanence values have a bias towards this center (they have higher values near the
+        /// center).
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="columnsCount"></param>
+        /// <param name="amountOfPotentialSynapses"></param>
         public void Init(HtmInput input,
                          int columnsCount = 9,
                          int amountOfPotentialSynapses = 36)
         {
-
             _input = input;
             _columnList = new List<HtmColumn>();
             _activeColumns = new List<HtmColumn>();
@@ -172,34 +232,31 @@ namespace Htm
                 inputIndexList.Add(i);
             }
 
-            var clusters = KMeansAlgorithm.FindMatrixClusters(input.Matrix.GetLength(0), input.Matrix.GetLength(1), columnsCount);
-            foreach (var cluster in clusters)
+            IEnumerable<KMeansCluster> clusters = KMeansAlgorithm.FindMatrixClusters(input.Matrix.GetLength(0), input.Matrix.GetLength(1), columnsCount);
+            foreach (KMeansCluster cluster in clusters)
             {
-
-                var htmSynapses = inputIndexList.Shuffle(Ran).ToList();
+                List<int> htmSynapses = inputIndexList.Shuffle(Ran).ToList();
                 var synapses = new List<HtmSynapse>();
 
                 for (int j = 0; j < amountOfPotentialSynapses; j++)
                 {
                     var newSynapse = new HtmSynapse
-                                         {
-                                             Input = input,
-                                             Y = htmSynapses[j] / input.Matrix.GetLength(0),
-                                             X = htmSynapses[j] % input.Matrix.GetLength(0),
-                                             Permanance = (Ran.Next(5)) / (double)10,
-                                         };
+                                     {
+                                         Input = input,
+                                         Y = htmSynapses[j] / input.Matrix.GetLength(0),
+                                         X = htmSynapses[j] % input.Matrix.GetLength(0),
+                                         Permanance = (Ran.Next(5)) / (double)10,
+                                     };
 
                     synapses.Add(newSynapse);
-
-
                 }
 
                 _columnList.Add(new HtmColumn(_connectedPermanence)
-                                    {
-                                        Y = (int)Math.Round(cluster.Location.Y),
-                                        X = (int)Math.Round(cluster.Location.X),
-                                        PotentialSynapses = synapses
-                                    });
+                                {
+                                    Y = (int)Math.Round(cluster.Location.Y),
+                                    X = (int)Math.Round(cluster.Location.X),
+                                    PotentialSynapses = synapses
+                                });
             }
 
 
@@ -227,7 +284,6 @@ namespace Htm
 
 
             Init(input, columnsCount, amountOfPotentialSynapses);
-
         }
 
         #endregion

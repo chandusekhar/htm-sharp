@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
 
 namespace Htm
 {
@@ -9,11 +8,11 @@ namespace Htm
     {
         #region Fields
 
-        private List<bool> _afterInhibationActivationHistory;
-        private List<bool> _beforeInhibationActivationHistory;
+        private readonly List<bool> _afterInhibationActivationHistory;
+        private readonly List<bool> _beforeInhibationActivationHistory;
 
-        private double _connectedPermanence;
-        private int _historySize;
+        private readonly double _connectedPermanence;
+        private readonly int _historySize;
 
         #endregion
 
@@ -28,6 +27,12 @@ namespace Htm
         public int Y
         {
             get;
+            set;
+        }
+
+        public IEnumerable<HtmCell> Cells
+        {
+            get; 
             set;
         }
 
@@ -102,9 +107,9 @@ namespace Htm
 
         public void UpdateColumnBoost()
         {
-            MinimalDutyCycle = 0.01 * this.Neighbors.Max(n => n.ActiveDutyCycle);
+            MinimalDutyCycle = 0.01 * (!Neighbors.Any() ? 1 : Neighbors.Max(n => n.ActiveDutyCycle));
 
-            ActiveDutyCycle = (double)_afterInhibationActivationHistory.Count(state => state == true) / _afterInhibationActivationHistory.Count();
+            ActiveDutyCycle = (double)_afterInhibationActivationHistory.Count(state => state) / _afterInhibationActivationHistory.Count();
 
             if (ActiveDutyCycle > MinimalDutyCycle)
             {
@@ -118,7 +123,7 @@ namespace Htm
 
         public void UpdateSynapsePermanance(double connectedPermanance)
         {
-            OverlapDutyCycle = (double)_beforeInhibationActivationHistory.Count(state => state == true) / _beforeInhibationActivationHistory.Count();
+            OverlapDutyCycle = (double)_beforeInhibationActivationHistory.Count(state => state) / _beforeInhibationActivationHistory.Count();
 
             if (OverlapDutyCycle < MinimalDutyCycle)
             {
@@ -137,7 +142,9 @@ namespace Htm
         {
             _afterInhibationActivationHistory = new List<bool>();
             _beforeInhibationActivationHistory = new List<bool>();
-
+            
+            
+            Cells = new BindingList<HtmCell>();
             PotentialSynapses = new List<HtmSynapse>();
 
             _connectedPermanence = connectedPermanence;

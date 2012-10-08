@@ -1,13 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Htm
 {
     public class HtmCell
     {
         #region Properties
+
+
+        public HtmCellState Old
+        {
+            get; 
+            set;
+        }
+
+        public HtmCellState New
+        {
+            get; 
+            set;
+        }
 
         public IEnumerable<HtmDendriteSegment> DendriteSegments
         {
@@ -25,5 +35,24 @@ namespace Htm
         }
 
         #endregion
+        
+    }
+
+
+
+
+    public class HtmCellState
+    {
+        public bool ActiveState
+        {
+            get;
+            set;
+        }
+
+        public bool PredictiveState
+        {
+            get;
+            set;
+        }
     }
 }

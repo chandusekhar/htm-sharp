@@ -1,13 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Htm
 {
     public class HtmDendriteSegment
     {
         #region Properties
+        
+        public bool IsSequenceSegment
+        {
+            get; 
+            set;
+        }
 
         public IEnumerable<HtmSynapse> Synapses
         {
