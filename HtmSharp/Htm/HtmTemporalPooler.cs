@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Htm.Common;
 
 namespace Htm
 {
     public class HtmTemporalPooler
     {
-        #region Fields
-
-        private readonly int _activationTreshold;
-
-        #endregion
-
 
         #region Methods
 
@@ -36,14 +31,14 @@ namespace Htm
 
                 foreach (HtmCell cell in column.Cells)
                 {
-                    if (cell.GetStateByTime(HtmTime.Before).PredictiveState)
+                    if (cell.GetByTime(HtmTime.Before).PredictiveState)
                     {
-                        HtmSegment segment = /*TODO -> cell.*/GetActiveSegment(cell.GetStateByTime(HtmTime.Before));
+                        HtmSegment segment = /*TODO -> cell.*/GetActiveSegment(cell.GetByTime(HtmTime.Before), HtmTime.Before);
 
                         if (segment != null && segment.IsSequenceSegment)
                         {
                             buPredicted = true;
-                            cell.GetStateByTime(HtmTime.Now).ActiveState = true;
+                            cell.GetByTime(HtmTime.Now).ActiveState = true;
                         }
                     }
                 }
@@ -52,19 +47,37 @@ namespace Htm
                 {
                     foreach (HtmCell cell in column.Cells)
                     {
-                        cell.GetStateByTime(HtmTime.Now).ActiveState = true;
+                        cell.GetByTime(HtmTime.Now).ActiveState = true;
                     }
                 }
             }
         }
 
-        public HtmSegment GetActiveSegment(HtmCellState cell)
-        {
-            HtmSegment result = null;
 
-            //TODO Implement
-            throw new NotImplementedException();
+        /// <summary>
+        /// getActiveSegment(c, i, t, state) 
+        /// For the given column c cell i, return a segment index such that 
+        /// segmentActive(s,t, state) is true. If multiple segments are active, sequence 
+        /// segments are given preference. Otherwise, segments with most activity 
+        /// are given preference.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <param name="time"> </param>
+        /// <returns></returns>
+        public HtmSegment GetActiveSegment(HtmCellState cell, HtmTime time)
+        {
+            var activeSegments = cell.Segments.Where(segment => segment.IsActive(time)).ToList();
+
+            if (activeSegments.Count == 0)
+            {
+                return null;
+            }
+
+            activeSegments.Sort(new SegmentComparer(time));
+            return activeSegments.First();
         }
+
+
 
         /**
          * Phase 2 The second phase calculates the predictive state for each cell. A
@@ -83,11 +96,11 @@ namespace Htm
             {
                 foreach (HtmCell cell in column.Cells)
                 {
-                    foreach (HtmSegment segment in cell.GetStateByTime(HtmTime.Now).DendriteSegments)
+                    foreach (HtmSegment segment in cell.GetByTime(HtmTime.Now).Segments)
                     {
-                        if (/*TODO -> segment.*/IsSegmentActive(segment, HtmTime.Now))
+                        if (segment.IsActive(HtmTime.Now))
                         {
-                            cell.GetStateByTime(HtmTime.Now).PredictiveState = true;
+                            cell.GetByTime(HtmTime.Now).PredictiveState = true;
                         }
                     }
                 }
@@ -95,29 +108,8 @@ namespace Htm
         }
 
 
-        
-        /// <summary>
-        /// segmentActive(s, t, state) This routine returns true if the number of
-        /// connected synapses on segment s that are active due to the given state at
-        /// time t is greater than activationThreshold. The parameter state can be
-        /// activeState, or learnState.     
-        /// </summary>
-        private bool IsSegmentActive(HtmSegment segment, HtmTime time)
-        {
-            var ammountConnected = segment.Synapses.Count(synapse => synapse.IsConnected() && synapse.InputCell.GetStateByTime(time).ActiveState);
-            return ammountConnected > _activationTreshold;
-        }
-
         #endregion
 
 
-        #region Instance
-
-        public HtmTemporalPooler(int activationTreshold = 1)
-        {
-            _activationTreshold = activationTreshold;
-        }
-
-        #endregion
     }
 }

@@ -11,8 +11,8 @@ namespace Htm
 
     public class HtmCell
     {
-        private HtmCellState _oldState;
-        private HtmCellState _newState;
+        private readonly HtmCellState _oldState;
+        private readonly HtmCellState _newState;
         
         public HtmCell()
         {
@@ -21,7 +21,7 @@ namespace Htm
         }
 
 
-        public HtmCellState GetStateByTime(HtmTime time)
+        public HtmCellState GetByTime(HtmTime time)
         {
             switch (time)
             {
@@ -52,7 +52,7 @@ namespace Htm
             set;
         }
 
-        public IEnumerable<HtmSegment> DendriteSegments
+        public IEnumerable<HtmSegment> Segments
         {
             get;
             private set;
@@ -64,12 +64,12 @@ namespace Htm
 
         public HtmCellState(IEnumerable<HtmSegment> dendriteSegments)
         {
-            DendriteSegments = dendriteSegments;
+            Segments = dendriteSegments;
         }
 
         public HtmCellState()
         {
-            DendriteSegments = new List<HtmSegment>();
+            Segments = new List<HtmSegment>();
         }
 
         #endregion

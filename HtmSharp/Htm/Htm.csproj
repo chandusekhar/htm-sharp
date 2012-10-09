@@ -47,6 +47,7 @@
     <Compile Include="Common\KMeansAlgorithm.cs" />
     <Compile Include="Common\KMeansCluster.cs" />
     <Compile Include="Common\KMeansPoint.cs" />
+    <Compile Include="Common\SegmentComparer.cs" />
     <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
     <Compile Include="HtmLateralSynapse.cs" />
