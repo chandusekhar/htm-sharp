@@ -3,8 +3,7 @@
     public class HtmRegion
     {
         #region Fields
-
-        private readonly HtmSpatialPooler _spatialPooler;
+        
         private readonly HtmTemporalPooler _temporalPooler;
 
         #endregion
@@ -13,8 +12,7 @@
 
         public HtmRegion(HtmInput input)
         {
-            _spatialPooler = new HtmSpatialPooler(input);
-            _temporalPooler = new HtmTemporalPooler();
+            _temporalPooler = new HtmTemporalPooler(new HtmSpatialPooler(input));
         }
 
         #endregion
@@ -23,9 +21,7 @@
 
         public void Run()
         {
-            _spatialPooler.Run();
-            _temporalPooler.ComputeActiveState(_spatialPooler.ActiveColumns);
-            _temporalPooler.ComputePredictiveState(_spatialPooler.Columns);
+            _temporalPooler.Run();
         }
 
         #endregion

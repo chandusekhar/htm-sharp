@@ -55,7 +55,7 @@ namespace Htm
         public IEnumerable<HtmSegment> Segments
         {
             get;
-            private set;
+            set;
         }
 
         #endregion

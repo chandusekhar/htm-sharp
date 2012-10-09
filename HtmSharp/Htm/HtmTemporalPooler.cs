@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Htm.Common;
 
@@ -7,6 +8,11 @@ namespace Htm
 {
     public class HtmTemporalPooler
     {
+        #region Fields
+
+        private readonly HtmSpatialPooler _spatialPooler;
+
+        #endregion
 
         #region Methods
 
@@ -23,9 +29,9 @@ namespace Htm
          * is added to that cell.
          */
 
-        public void ComputeActiveState(IEnumerable<HtmColumn> activeColumns)
+        private void ComputeActiveState()
         {
-            foreach (HtmColumn column in activeColumns)
+            foreach (HtmColumn column in _spatialPooler.ActiveColumns)
             {
                 bool buPredicted = false;
 
@@ -90,9 +96,9 @@ namespace Htm
          * activity during the previous time step.         
          */
 
-        public void ComputePredictiveState(IEnumerable<HtmColumn> columns)
+        private void ComputePredictiveState()
         {
-            foreach (HtmColumn column in columns)
+            foreach (HtmColumn column in _spatialPooler.Columns)
             {
                 foreach (HtmCell cell in column.Cells)
                 {
@@ -107,6 +113,68 @@ namespace Htm
             }
         }
 
+
+
+        private void Init()
+        {
+            var ran = new Random();
+
+            foreach (var column in _spatialPooler.Columns)
+            {
+                var cells = new List<HtmCell>();
+                for (int i = 0; i < HtmParameters.CellsPerColumns; i++)
+                {
+                    var newCell = new HtmCell();
+
+                    var segments = new List<HtmSegment>();
+
+                    for (int j = 0; j < HtmParameters.AmountOfSegments; j++)
+                    {
+                        var lateralSynapses = new List<HtmLateralSynapse>();
+
+                        //var randomSynapses = new HashSet<HtmCell>();
+
+                        //while (randomSynapses.Count <= HtmParameters.AmountOfSynapses)
+                        //{
+                        //    randomSynapses.Add(  ran.Next(_spatialPooler.Columns.Count()) )
+                        //}
+
+                        for (int k = 0; k < HtmParameters.AmountOfSynapses; k++)
+                        {
+                            lateralSynapses.Add(new HtmLateralSynapse(HtmParameters.LateralSynapseConnectedPermanance)
+                                                {
+                                                    Permanance = HtmParameters.InitialPermanence,
+                                                });
+                        }
+
+                        segments.Add(new HtmSegment(lateralSynapses));
+                    }
+
+                    cells.Add(newCell);
+                }
+                column.Cells = cells;
+            }
+
+        }
+
+
+        public void Run()
+        {
+            _spatialPooler.Run();
+            ComputeActiveState();
+            ComputePredictiveState();
+        }
+
+        #endregion
+
+
+        #region Instance
+
+        public HtmTemporalPooler(HtmSpatialPooler spatialPooler)
+        {
+            _spatialPooler = spatialPooler;
+            Init();
+        }
 
         #endregion
 

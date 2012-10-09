@@ -28,7 +28,7 @@ namespace Htm
 
         
         /// <summary>
-        /// segmentActive(s, t, state) This routine returns true if the number of
+        /// This routine returns true if the number of
         /// connected synapses on segment s that are active due to the given state at
         /// time t is greater than activationThreshold. The parameter state can be
         /// activeState, or learnState.     

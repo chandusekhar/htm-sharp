@@ -10,10 +10,6 @@ namespace Htm
         #region Fields
 
         private static readonly Random Ran = new Random();
-        private readonly double _connectedPermanence;
-        private readonly int _desiredLocalActivity;
-        private readonly int _minOverlap;
-        private readonly double _permananceInc;
         private List<HtmColumn> _activeColumns;
         private List<HtmColumn> _columnList;
         private double _inhibitionRadius;
@@ -62,7 +58,7 @@ namespace Htm
             {
                 int overlap = column.GetConnectedSynapses().Sum(synapse => synapse.SourceInput ? 1 : 0);
 
-                if (overlap < _minOverlap)
+                if (overlap < HtmParameters.MinimumOverlap)
                 {
                     column.Overlap = 0;
                     column.AddOverlapToHistory(false);
@@ -93,7 +89,7 @@ namespace Htm
                     column.Neighbors = CalculateNeighBors(column);
                 }
 
-                double minLocalActivity = KthScore(column.Neighbors, _desiredLocalActivity);
+                double minLocalActivity = KthScore(column.Neighbors, HtmParameters.DesiredLocalActivity);
 
                 if (column.Overlap > 0 && column.Overlap >= minLocalActivity)
                 {
@@ -166,12 +162,12 @@ namespace Htm
                 {
                     if (synapse.SourceInput)
                     {
-                        synapse.Permanance += _permananceInc;
+                        synapse.Permanance += HtmParameters.PermanceIncrement;
                         synapse.Permanance = Math.Min(synapse.Permanance, 1.0);
                     }
                     else
                     {
-                        synapse.Permanance -= _permananceInc;
+                        synapse.Permanance -= HtmParameters.PermanceIncrement;
                         synapse.Permanance = Math.Max(synapse.Permanance, 0.0);
                     }
                 }
@@ -180,7 +176,7 @@ namespace Htm
             foreach (HtmColumn column in _columnList)
             {
                 column.UpdateColumnBoost();
-                column.UpdateSynapsePermanance(_connectedPermanence);
+                column.UpdateSynapsePermanance(HtmParameters.ConnectedPermanence);
             }
 
             _inhibitionRadiusBefore = _inhibitionRadius;
@@ -220,11 +216,7 @@ namespace Htm
         /// center).
         /// </summary>
         /// <param name="input"></param>
-        /// <param name="columnsCount"></param>
-        /// <param name="amountOfPotentialSynapses"></param>
-        public void Init(HtmInput input,
-                         int columnsCount = 9,
-                         int amountOfPotentialSynapses = 36)
+        public void Init(HtmInput input)
         {
             _input = input;
             _columnList = new List<HtmColumn>();
@@ -238,15 +230,15 @@ namespace Htm
                 inputIndexList.Add(i);
             }
 
-            IEnumerable<KMeansCluster> clusters = KMeansAlgorithm.FindMatrixClusters(input.Matrix.GetLength(0), input.Matrix.GetLength(1), columnsCount);
+            IEnumerable<KMeansCluster> clusters = KMeansAlgorithm.FindMatrixClusters(input.Matrix.GetLength(0), input.Matrix.GetLength(1), HtmParameters.ColumnsCount);
             foreach (KMeansCluster cluster in clusters)
             {
                 List<int> htmSynapses = inputIndexList.Shuffle(Ran).ToList();
                 var synapses = new List<HtmForwardSynapse>();
 
-                for (int j = 0; j < amountOfPotentialSynapses; j++)
+                for (int j = 0; j < HtmParameters.AmountOfPotentialSynapses; j++)
                 {
-                    var newSynapse = new HtmForwardSynapse(_connectedPermanence)
+                    var newSynapse = new HtmForwardSynapse(HtmParameters.ConnectedPermanence)
                                      {
                                          Input = input,
                                          Y = htmSynapses[j] / input.Matrix.GetLength(0),
@@ -273,23 +265,10 @@ namespace Htm
 
         #region Instance
 
-        public HtmSpatialPooler(HtmInput input,
-                                int columnsCount = 9,
-                                int amountOfPotentialSynapses = 32,
-                                int minOverlap = 3,
-                                int desiredLocalActivity = 1,
-                                double inhibitionRadios = 5.0,
-                                double permananceInc = 0.05,
-                                double connectedPermanence = 0.2)
+        public HtmSpatialPooler(HtmInput input)
         {
-            _minOverlap = minOverlap;
-            _desiredLocalActivity = desiredLocalActivity;
-            _permananceInc = permananceInc;
-            _inhibitionRadius = inhibitionRadios;
-            _connectedPermanence = connectedPermanence;
-
-
-            Init(input, columnsCount, amountOfPotentialSynapses);
+            _inhibitionRadius = HtmParameters.InhibitionRatio;
+            Init(input);
         }
 
         #endregion

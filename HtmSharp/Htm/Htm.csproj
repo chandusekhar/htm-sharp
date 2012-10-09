@@ -51,6 +51,7 @@
     <Compile Include="HtmCell.cs" />
     <Compile Include="HtmColumn.cs" />
     <Compile Include="HtmLateralSynapse.cs" />
+    <Compile Include="HtmParameters.cs" />
     <Compile Include="HtmSegment.cs" />
     <Compile Include="HtmRegion.cs" />
     <Compile Include="HtmSpatialPooler.cs" />
